@@ -3,9 +3,12 @@ import express from "express";
 import cors from "cors";
 import { AccessToken, WebhookReceiver} from "livekit-server-sdk";
 
-const SERVER_PORT = process.env.SERVER_PORT || 6080;
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "devkey";
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "secret";
+const SERVER_PORT = process.env.SERVER_PORT;
+//const SERVER_PORT = process.env.SERVER_PORT || 6080;
+const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
+// const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "devkey";
+const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
+//const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET || "secret";
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
 
 const app = express();
@@ -34,7 +37,6 @@ app.post("/livekit/webhook", async (req, res) => {
 
 // /api/connection-details 엔드포인트
 app.get("/api/connection-details", async (req, res) => {
-  console.log("분리 성공");
   try {
     // 쿼리 파라미터 가져오기
     const roomName = req.query.roomName;
@@ -92,17 +94,17 @@ const createParticipantToken = async (userInfo, roomName) =>  {
 }
 
 // LiveKit 서버 URL 가져오기
-function getLiveKitURL(region) {
-  let targetKey = "LIVEKIT_URL";
-  if (region) {
-    targetKey = `LIVEKIT_URL_${region}`.toUpperCase();
-  }
-  const url = process.env[targetKey];
-  if (!url) {
-    throw new Error(`${targetKey} is not defined`);
-  }
-  return url;
-}
+// function getLiveKitURL(region) {
+//   let targetKey = "LIVEKIT_URL";
+//   if (region) {
+//     targetKey = `LIVEKIT_URL_${region}`.toUpperCase();
+//   }
+//   const url = process.env[targetKey];
+//   if (!url) {
+//     throw new Error(`${targetKey} is not defined`);
+//   }
+//   return url;
+// }
 
 // 필요한 임의 문자열 생성 유틸리티 함수 (대체 가능)
 function randomString(length) {
