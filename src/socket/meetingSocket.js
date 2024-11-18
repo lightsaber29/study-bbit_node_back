@@ -1,3 +1,5 @@
+// import { saveTranscriptToStorage } from '../utils/storageUtils.js';
+
 export const meetingRooms = new Map();
 
 export const initializeSocket = (io) => {
@@ -29,7 +31,8 @@ export const initializeSocket = (io) => {
       } else {
         socket.emit('error', { message: 'Invalid meeting ID' });
       }
-    });
+      console.log(meetingData.transcripts);
+    });    
 
     //회의 종료,, 추후에 transcripts 배열에 있는 정보들을 통해 회의록 작성
     //회의록 -> s3에 저장(todo)
@@ -46,6 +49,40 @@ export const initializeSocket = (io) => {
       }
     });
 
+    //방장이 회의록 작성을 종료할 경우 transcript를 리셋하고 녹음을 하지 않게끔한다.
+    socket.on('stopRecordMinute', ({ meetingId }) => {
+      const meetingData = meetingRooms.get(meetingId);
+      console.log('stopRecording');
+      io.to(meetingId).emit('transcriptsReset');
+      
+    });
+
+    //방장이 회의록 기록을 중지시킬 때
+    socket.on('stopRecord', ({meetingId}) => {
+      io.to(meetingId).emit('stopRecord');
+      console.log('stop');
+    })
+
+    //방장이 회의록 기록을 재개할 때
+    socket.on('resumeRecord', ({meetingId}) => {
+      io.to(meetingId).emit('resumeRecord');
+      console.log('resume');
+    })
+    //방장이 회의록 작성 종료 후 저장할 때 호출
+    socket.on('saveMeeting', ({ meetingId, meetingName }) => {
+      const meetingData = meetingRooms.get(meetingId);
+      
+      console.log(meetingName, meetingId);
+      // Save the meeting transcript (e.g. to a file or cloud storage)
+      // saveTranscriptToStorage(meetingId, meetingname, meetingData.transcripts);
+
+      // Reset the meeting transcripts
+      meetingData.transcripts = [];
+
+      // Notify all clients in the meeting room that the transcripts have been reset
+      io.to(meetingId).emit('transcriptsReset');
+      
+    });
     
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
