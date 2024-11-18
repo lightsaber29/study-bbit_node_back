@@ -30,7 +30,7 @@ export const createApp = () => {
   app.use(express.raw({ type: "application/webhook+json" }));
 
   // Routes
-  app.use('/livekit', livekitRoutes);
+  app.use('/', livekitRoutes);
   app.use('/api/meetings', meetingRoutes);
 
   // Socket 초기화

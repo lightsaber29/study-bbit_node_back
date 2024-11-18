@@ -1,4 +1,6 @@
-import { createParticipantToken, getLiveKitURL } from "../services/livekitService.js";
+import { createParticipantToken} from "../services/livekitService.js";
+import {config} from "../config/env.js"
+import { randomString } from "../utils/helpers.js";
 
 export const handleWebhook = async (req, res) => {
   try {
@@ -18,7 +20,7 @@ export const getConnectionDetails = async (req, res) => {
   try {
     const { roomName, participantName, metadata = "", region } = req.query;
     
-    const livekitServerUrl = LIVEKIT_URL;
+    const livekitServerUrl = config.LIVEKIT_URL;
     if (!livekitServerUrl) {
       return res.status(400).json({ errorMessage: "Invalid region" });
     }

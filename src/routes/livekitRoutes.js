@@ -3,7 +3,7 @@ import { handleWebhook, getConnectionDetails } from '../controllers/livekitContr
 
 const router = express.Router();
 
-router.post('/webhook', handleWebhook);
-router.get('/connection-details', getConnectionDetails);
+router.post('/livekit/webhook', handleWebhook);
+router.get('/api/connection-details', getConnectionDetails);
 
 export default router;
