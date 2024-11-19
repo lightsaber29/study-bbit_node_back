@@ -11,19 +11,37 @@ import { initializeSocket } from './socket/meetingSocket.js';
 export const createApp = () => {
   const app = express();
   const server = http.createServer(app);
+
+  // 허용된 도메인 설정
+  const allowedOrigins = [
+    'http://localhost:3000',  // 로컬 개발 환경
+    'https://studybbit.store' // 배포된 환경
+  ];
   
   // Socket.io 설정
   const io = new Server(server, {
     cors: {
-      origin: config.CORS_ORIGIN,
-      methods: ["GET", "POST"]
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ["GET", "POST", "DELETE"]
     }
   });
 
   // Middleware
   app.use(cors({
-    origin: config.CORS_ORIGIN,
-    methods: ['GET', 'POST'],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ["GET", "POST", "DELETE"],
     credentials: true
   }));
   app.use(express.json());
