@@ -31,7 +31,7 @@ export const initializeSocket = (io) => {
       } else {
         socket.emit('error', { message: 'Invalid meeting ID' });
       }
-      console.log(meetingData.transcripts);
+      // console.log(meetingData.transcripts);
     });    
 
     //회의 종료,, 추후에 transcripts 배열에 있는 정보들을 통해 회의록 작성
@@ -63,6 +63,12 @@ export const initializeSocket = (io) => {
       console.log('stop');
     })
 
+    socket.on('startRecord', ({ meetingId}) => {
+      console.log('start');
+      io.to(meetingId).emit('startRecord');
+      
+    })
+
     //방장이 회의록 기록을 재개할 때
     socket.on('resumeRecord', ({meetingId}) => {
       io.to(meetingId).emit('resumeRecord');
@@ -74,7 +80,7 @@ export const initializeSocket = (io) => {
       
       console.log(meetingName, meetingId);
       // Save the meeting transcript (e.g. to a file or cloud storage)
-      // saveTranscriptToStorage(meetingId, meetingname, meetingData.transcripts);
+      saveTranscriptToStorage(meetingId, meetingName, meetingData.transcripts);
 
       // Reset the meeting transcripts
       meetingData.transcripts = [];
@@ -83,7 +89,7 @@ export const initializeSocket = (io) => {
       io.to(meetingId).emit('transcriptsReset');
       
     });
-    
+
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
       meetingRooms.forEach((data, meetingId) => {
