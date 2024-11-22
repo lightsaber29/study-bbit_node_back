@@ -1,0 +1,43 @@
+name: CI/CD for express server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 코드 체크아웃
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. Docker 이미지 빌드
+    - name: Build Docker Image
+      run: docker build -t gyqjajang/study-bbit_node_back .
+
+    # 4. Docker 이미지 푸시
+    - name: Push Docker Image to DockerHub
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        docker push gyqjajang/study-bbit_node_back
+    
+    # 5. SSH를 통해 EC2 서버에 배포
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        port: 22
+        script: |
+          sudo docker pull gyqjajang/study-bbit_node_back
+          sudo docker stop study-bbit_node_back || true
+          sudo docker rm study-bbit_node_back || true
+          sudo docker run --env-file /home/ubuntu/envdir/express/.env -d -p 6081:6081 --name study-bbit_node_back --restart always gyqjajang/study-bbit_node_back

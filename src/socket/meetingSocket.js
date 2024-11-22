@@ -80,7 +80,7 @@ export const initializeSocket = (io) => {
       
       console.log(meetingName, meetingId);
       // Save the meeting transcript (e.g. to a file or cloud storage)
-      saveTranscriptToStorage(meetingId, meetingName, meetingData.transcripts);
+      // saveTranscriptToStorage(meetingId, meetingName, meetingData.transcripts);
 
       // Reset the meeting transcripts
       meetingData.transcripts = [];
