@@ -123,15 +123,20 @@ const deleteFileFromS3 = async (fileUrl) => {
     const url = new URL(fileUrl);
     const pathSegments = url.pathname.split('/');
     const bucketName = process.env.AWS_S3_BUCKET_NAME;
-    const key = pathSegments.slice(1).join('/'); // 첫 번째 '/' 이후의 모든 경로
+    //한글 인코딩 반영
+    const key = decodeURIComponent(pathSegments.slice(1).join('/')); // 첫 번째 '/' 이후의 모든 경로
 
     const params = {
       Bucket: bucketName,
       Key: key
     };
 
-    await s3.deleteObject(params).promise();
-    console.log(`Successfully deleted file from S3: ${fileUrl}`);
+    const response = await s3.deleteObject(params).promise();
+    // console.log('S3 deleteObject response:', response);
+    // console.log('key: ', key);
+    // console.log('buckName: ',bucketName);
+    // console.log('pathSegments: ', pathSegments);
+    // console.log(`Successfully deleted file from S3: ${fileUrl}`);
   } catch (error) {
     console.error(`Error deleting file from S3: ${fileUrl}`, error);
     throw error;
