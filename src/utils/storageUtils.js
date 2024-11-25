@@ -188,13 +188,12 @@ const s3 = new AWS.S3({
 const { Pool } = pkg;
 // PostgreSQL 설정
 const pool = new Pool({
-    user: process.env.PGUSER,
-    host: process.env.PGHOST,
-    database: process.env.PGDATABASE,
-    password: process.env.PGPASSWORD,
-    port: process.env.PGPORT,
+    user: process.env.POSTGRES_USER,
+    host: process.env.POSTGRES_HOST,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: process.env.POSTGRES_PORT
   });
-
 // PostgreSQL에 회의록 정보 저장
 export const saveMeetingToDatabase = async (meetingId, meetingName, date, transcriptPath, markdownPath) => {
     const query = `
