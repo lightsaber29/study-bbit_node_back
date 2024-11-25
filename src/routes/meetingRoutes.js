@@ -1,6 +1,7 @@
 import express from 'express';
 import { getMeetingDetails } from '../controllers/meetingController.js';
 import { getMeetingTranscripts } from '../utils/storageUtils.js';
+import {deleteMmSummary} from '../controllers/dbController.js';
 
 const router = express.Router();
 
@@ -20,3 +21,6 @@ router.get('/:meetingId', async (req, res) => {
   });
 
 export default router;
+
+// 백엔드 라우터 코드
+router.delete('/summary/:mmSummaryId', deleteMmSummary);
