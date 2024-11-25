@@ -41,3 +41,4 @@ jobs:
           sudo docker stop study-bbit_node_back || true
           sudo docker rm study-bbit_node_back || true
           sudo docker run --env-file /home/ubuntu/envdir/express/.env -d -p 6081:6081 --name study-bbit_node_back --restart always gyqjajang/study-bbit_node_back
+          sudo docker system prune -f --volumes
