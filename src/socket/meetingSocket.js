@@ -1,4 +1,6 @@
-// import { saveTranscriptToStorage } from '../utils/storageUtils.js';
+import { getImportantMeetingData, saveOriginalTranscript, saveMarkdownSummary, saveMeetingToDatabase } from '../utils/storageUtils.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export const meetingRooms = new Map();
 
@@ -74,20 +76,121 @@ export const initializeSocket = (io) => {
       io.to(meetingId).emit('resumeRecord');
       console.log('resume');
     })
-    //방장이 회의록 작성 종료 후 저장할 때 호출
-    socket.on('saveMeeting', ({ meetingId, meetingName }) => {
+    // //방장이 회의록 작성 종료 후 저장할 때 호출
+    // socket.on('saveMeeting', ({ meetingId, meetingName }) => {
+    //   const meetingData = meetingRooms.get(meetingId);
+    //   const date = Datetime.now();
+    //   //챗지피티로 요약된 회의록 가져오는 함수 작성
+
+    //   console.log(meetingName, meetingId);
+    //   // Save the meeting transcript (e.g. to a file or cloud storage)
+    //   const markDownContent = getImportantMeetingData(meetingData.transcripts, date);
+    //   saveOriginalTranscript(meetingId, meetingName, meetingData.transcripts, date);
+    //   saveMarkdownSummary(meetingId, meetingName, markDownContent, date);  
+      
+
+    //   // Reset the meeting transcripts
+    //   meetingData.transcripts = [];
+
+    //   // Notify all clients in the meeting room that the transcripts have been reset
+    //   io.to(meetingId).emit('transcriptsReset');
+      
+    // });
+
+    // 회의록 저장 이벤트 핸들러 개선
+    socket.on('saveMeeting', async ({ meetingId, meetingName }) => {
       const meetingData = meetingRooms.get(meetingId);
-      
-      console.log(meetingName, meetingId);
-      // Save the meeting transcript (e.g. to a file or cloud storage)
-      // saveTranscriptToStorage(meetingId, meetingName, meetingData.transcripts);
+      const date = new Date();
 
-      // Reset the meeting transcripts
-      meetingData.transcripts = [];
+      // 빈 회의록 체크
+      if (!meetingData || meetingData.transcripts.length === 0) {
+        socket.emit('meetingSaved', {  
+          success: false, 
+          error: 'No transcripts to save' 
+        });
+        return;
+      }
 
-      // Notify all clients in the meeting room that the transcripts have been reset
-      io.to(meetingId).emit('transcriptsReset');
-      
+      try {
+        // 저장 시작 알림
+        socket.emit('savingStarted', { meetingId });
+        
+        // 현재 트랜스크립트 복사 후 초기화
+        const currentTranscripts = [...meetingData.transcripts];
+        console.log('복사된 스크립트',currentTranscripts);
+
+        meetingData.transcripts = [];
+        io.to(meetingId).emit('transcriptsReset');
+
+        // 원본 저장 (비동기)
+        const transcriptPromise = saveOriginalTranscript(
+          meetingId, 
+          meetingName, 
+          currentTranscripts, 
+          date
+        );
+        
+        // GPT 처리 시작 알림
+        socket.emit('processingStarted', { meetingId });
+
+        // GPT 처리 및 마크다운 저장 (비동기)
+        getImportantMeetingData(currentTranscripts, date)
+          .then(async (markdownContent) => {
+            try {
+              const markdownResult = await saveMarkdownSummary(
+                meetingId, 
+                meetingName, 
+                markdownContent, 
+                date
+              );
+
+              const transcriptResult = await transcriptPromise;
+
+              // PostgreSQL에 저장
+              await saveMeetingToDatabase(
+                meetingId,
+                meetingName,
+                date,
+                transcriptResult.transcriptPath,
+                markdownResult.markdownPath
+              );
+
+              // 처리 완료 알림
+              socket.emit('meetingProcessed', { 
+                success: true,
+                meetingId,
+                transcriptPath: transcriptResult.transcriptPath,
+                markdownPath: markdownResult.markdownPath
+              });
+            } catch (error) {
+              console.error('Error in processing:', error);
+              socket.emit('meetingProcessingError', { 
+                meetingId,
+                error: 'Failed to process meeting summary'
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error in GPT processing:', error);
+            socket.emit('meetingProcessingError', { 
+              meetingId,
+              error: 'Failed to generate meeting summary'
+            });
+          });
+
+        // 즉시 저장 성공 알림 (GPT 처리는 계속 진행)
+        socket.emit('meetingSaved', { 
+          success: true,
+          message: 'Meeting saved successfully. Summary is being processed.'
+        });
+
+      } catch (error) {
+        console.error('Error in saveMeeting:', error);
+        socket.emit('meetingSaved', { 
+          success: false, 
+          error: 'Failed to save meeting data' 
+        });
+      }
     });
 
     socket.on('disconnect', () => {
