@@ -228,6 +228,12 @@ export const initializeSocket = (io) => {
     socket.on('timerReset', ({ meetingId }) => {
       console.log('타이머 리셋');
       io.to(meetingId).emit('timerReset');
-    });    
+    });
+
+    socket.on('modalSet', ({ meetingId }) => {
+      console.log('모달 상태 변경');
+      io.to(meetingId).emit('modalSet');
+    });
+
   });
 };
