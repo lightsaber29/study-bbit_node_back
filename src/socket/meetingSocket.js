@@ -204,5 +204,30 @@ export const initializeSocket = (io) => {
         }
       });
     });
+    
+    //sockets for timer
+    socket.on('timerSet', ({ meetingId, time }) => {
+      console.log('타이머 세팅');
+      if (typeof time !== 'number' || time <= 0) {
+        socket.emit('error', { message: '유효하지 않은 타이머 값입니다.' });
+        return;
+      }
+      io.to(meetingId).emit('timerSet', { time });
+    });
+
+    socket.on('timerStart', ({ meetingId }) => {
+      console.log('타이머 시작');
+      io.to(meetingId).emit('timerStart');
+    });
+
+    socket.on('timerPause', ({ meetingId }) => {
+      console.log('타이머 중지');
+      io.to(meetingId).emit('timerPause');
+    });
+
+    socket.on('timerReset', ({ meetingId }) => {
+      console.log('타이머 리셋');
+      io.to(meetingId).emit('timerReset');
+    });    
   });
 };
