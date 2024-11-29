@@ -67,7 +67,7 @@ export const initializeSocket = (io) => {
       }
     });
 
-    //방장이 회의록 기록을 중지시킬 때
+    //방��이 회의록 기록을 중지시킬 때
     socket.on('stopRecord', ({ meetingId }) => {
       const meetingData = meetingRooms.get(meetingId);
       if (meetingData) {
@@ -150,8 +150,8 @@ export const initializeSocket = (io) => {
       }
 
       try {
-        // 저장 시작 알림
-        socket.emit('savingStarted', { meetingId });
+        // 저장 시작을 모든 참가자에게 알림
+        io.to(meetingId).emit('savingStarted', { meetingId });
         
         // 현재 트랜스크립트 복사 후 초기화
         const currentTranscripts = [...meetingData.transcripts];
@@ -171,7 +171,7 @@ export const initializeSocket = (io) => {
         // GPT 처리 시작 알림
         socket.emit('processingStarted', { meetingId });
 
-        // GPT 처리 및 마크다운 저�� (비동기)
+        // GPT 처리 및 마크다운 저 (비동기)
         getImportantMeetingData(currentTranscripts, formattedDate)
           .then(async (markdownContent) => {
             try {
@@ -216,15 +216,15 @@ export const initializeSocket = (io) => {
             });
           });
 
-        // 즉시 저장 성공 알림 (GPT 처리는 계속 진행)
-        socket.emit('meetingSaved', { 
+        // 저장 성공을 모든 참가자에게 알림
+        io.to(meetingId).emit('meetingSaved', { 
           success: true,
           message: 'Meeting saved successfully. Summary is being processed.'
         });
 
       } catch (error) {
         console.error('Error in saveMeeting:', error);
-        socket.emit('meetingSaved', { 
+        io.to(meetingId).emit('meetingSaved', { 
           success: false, 
           error: 'Failed to save meeting data' 
         });
