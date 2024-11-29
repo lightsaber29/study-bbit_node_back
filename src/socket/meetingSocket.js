@@ -9,18 +9,23 @@ export const initializeSocket = (io) => {
     console.log('Client connected:', socket.id);
 
     socket.on('joinMeeting', (meetingId) => {
-      //meetingId로 해당 방 모든 클라이언트에게 메시지 전송 가능 
       socket.join(meetingId); 
       if (!meetingRooms.has(meetingId)) {
         meetingRooms.set(meetingId, {
           transcripts: [],
-          participants: new Set()
+          participants: new Set(),
+          isRecording: false
         });
       }
-      // join한 소켓을 meetingId 방에 추가
-      meetingRooms.get(meetingId).participants.add(socket.id);
+      
       const meetingData = meetingRooms.get(meetingId);
+      meetingData.participants.add(socket.id);
+      
       socket.emit('previousTranscripts', meetingData.transcripts);
+      
+      if (meetingData.isRecording) {
+        socket.emit('startRecord');
+      }
     });
 
     //새로운 transcript가 클라이언트에서 전송되면 연결된 meetingId에 전송
@@ -54,28 +59,51 @@ export const initializeSocket = (io) => {
     //방장이 회의록 작성을 종료할 경우 transcript를 리셋하고 녹음을 하지 않게끔한다.
     socket.on('stopRecordMinute', ({ meetingId }) => {
       const meetingData = meetingRooms.get(meetingId);
-      console.log('stopRecording');
-      io.to(meetingId).emit('transcriptsReset');
-      
+      if (meetingData) {
+        meetingData.isRecording = false;
+        console.log(meetingData.isRecording);
+        io.to(meetingId).emit('transcriptsReset');
+        console.log('stopRecording');
+      }
     });
 
     //방장이 회의록 기록을 중지시킬 때
-    socket.on('stopRecord', ({meetingId}) => {
-      io.to(meetingId).emit('stopRecord');
-      console.log('stop');
-    })
+    socket.on('stopRecord', ({ meetingId }) => {
+      const meetingData = meetingRooms.get(meetingId);
+      if (meetingData) {
+        meetingData.isRecording = false;
+        io.to(meetingId).emit('stopRecord');
+        console.log(meetingData.isRecording);
+        console.log('stop');
+      }
+    });
 
-    socket.on('startRecord', ({ meetingId}) => {
-      console.log('start');
-      io.to(meetingId).emit('startRecord');
-      
-    })
+    socket.on('startRecord', ({ meetingId }) => {
+      const meetingData = meetingRooms.get(meetingId);
+      if (meetingData) {
+        meetingData.isRecording = true;
+        io.to(meetingId).emit('startRecord');
+        console.log(meetingData.isRecording);
+        console.log('start');
+      }
+    });
 
     //방장이 회의록 기록을 재개할 때
-    socket.on('resumeRecord', ({meetingId}) => {
-      io.to(meetingId).emit('resumeRecord');
-      console.log('resume');
-    })
+    socket.on('resumeRecord', ({ meetingId }) => {
+      const meetingData = meetingRooms.get(meetingId);
+      if (meetingData) {
+        meetingData.isRecording = true;
+        io.to(meetingId).emit('resumeRecord');
+        console.log(meetingData.isRecording);
+        console.log('resume');
+      }
+    });
+
+    socket.on('savingScript', ({ meetingId }) => {
+      io.to(meetingId).emit('savingScript');
+      console.log('save');
+    });
+    
     // //방장이 회의록 작성 종료 후 저장할 때 호출
     // socket.on('saveMeeting', ({ meetingId, meetingName }) => {
     //   const meetingData = meetingRooms.get(meetingId);
@@ -101,6 +129,16 @@ export const initializeSocket = (io) => {
     socket.on('saveMeeting', async ({ meetingId, meetingName }) => {
       const meetingData = meetingRooms.get(meetingId);
       const date = new Date();
+      // 한국 시간으로 변환
+      const koreanDate = new Date(date.getTime() + 9 * 60 * 60 * 1000); // UTC + 9시간 (한국 표준시)
+
+      // 포맷팅
+      const year = koreanDate.getFullYear();
+      const month = String(koreanDate.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+      const day = String(koreanDate.getDate()).padStart(2, '0');
+      const hours = String(koreanDate.getHours()).padStart(2, '0');
+      const minutes = String(koreanDate.getMinutes()).padStart(2, '0');
+      const formattedDate = `${year}.${month}.${day} ${hours}:${minutes}`;
 
       // 빈 회의록 체크
       if (!meetingData || meetingData.transcripts.length === 0) {
@@ -133,8 +171,8 @@ export const initializeSocket = (io) => {
         // GPT 처리 시작 알림
         socket.emit('processingStarted', { meetingId });
 
-        // GPT 처리 및 마크다운 저장 (비동기)
-        getImportantMeetingData(currentTranscripts, date)
+        // GPT 처리 및 마크다운 저�� (비동기)
+        getImportantMeetingData(currentTranscripts, formattedDate)
           .then(async (markdownContent) => {
             try {
               const markdownResult = await saveMarkdownSummary(
