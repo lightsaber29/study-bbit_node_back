@@ -129,20 +129,18 @@ export const initializeSocket = (io) => {
     // });
 
     // 회의록 저장 이벤트 핸들러 개선
-    socket.on('saveMeeting', async ({ meetingId, meetingName }) => {
+    socket.on('saveMeeting', async ({ meetingId, meetingName, mode = 'basic' }) => {
       const meetingData = meetingRooms.get(meetingId);
       const date = new Date();
       // 한국 시간으로 변환
-      const koreanDate = new Date(date.getTime() + 9 * 60 * 60 * 1000); // UTC + 9시간 (한국 표준시)
-
-      // 포맷팅
-      const year = koreanDate.getFullYear();
-      const month = String(koreanDate.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
-      const day = String(koreanDate.getDate()).padStart(2, '0');
-      const hours = String(koreanDate.getHours()).padStart(2, '0');
-      const minutes = String(koreanDate.getMinutes()).padStart(2, '0');
+      console.log(date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
       const formattedDate = `${year}.${month}.${day} ${hours}:${minutes}`;
-
+      console.log(formattedDate);
       // 빈 회의록 체크
       if (!meetingData || meetingData.transcripts.length === 0) {
         socket.emit('meetingSaved', {  
@@ -174,8 +172,8 @@ export const initializeSocket = (io) => {
         // GPT 처리 시작 알림
         socket.emit('processingStarted', { meetingId });
 
-        // GPT 처리 및 마크다운 저 (비동기)
-        getImportantMeetingData(currentTranscripts, formattedDate)
+        // GPT 처리 및 마크다운 저장 (비동기) - mode 파라미터 추가
+        getImportantMeetingData(currentTranscripts, formattedDate, mode)
           .then(async (markdownContent) => {
             try {
               const markdownResult = await saveMarkdownSummary(
