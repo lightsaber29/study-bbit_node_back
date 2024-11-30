@@ -2,6 +2,8 @@ import { getImportantMeetingData, saveOriginalTranscript, saveMarkdownSummary, s
 import dotenv from 'dotenv';
 dotenv.config();
 
+import axios from 'axios';
+
 export const meetingRooms = new Map();
 
 export const initializeSocket = (io) => {
@@ -192,6 +194,12 @@ export const initializeSocket = (io) => {
                 transcriptResult.transcriptPath,
                 markdownResult.markdownPath
               );
+
+              //@@@ 알림 호출
+              await axios.post('https://studybbit.store:8080/api/noti/mm', {
+                roomId: meetingId,
+                fileUrl: markdownResult.markdownPath,
+              });
 
               // 처리 완료 알림
               socket.emit('meetingProcessed', { 
