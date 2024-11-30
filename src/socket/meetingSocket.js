@@ -67,7 +67,7 @@ export const initializeSocket = (io) => {
       }
     });
 
-    //방��이 회의록 기록을 중지시킬 때
+    //방이 회의록 기록을 중지시킬 때
     socket.on('stopRecord', ({ meetingId }) => {
       const meetingData = meetingRooms.get(meetingId);
       if (meetingData) {
@@ -271,6 +271,20 @@ export const initializeSocket = (io) => {
     socket.on('modalSet', ({ meetingId }) => {
       console.log('모달 상태 변경');
       io.to(meetingId).emit('modalSet');
+    });
+
+    // 저장 시작 이벤트
+    socket.on('savingStarted', ({ meetingId }) => {
+      io.to(meetingId).emit('savingStarted', { 
+        message: '회의록 저장을 시작합니다.' 
+      });
+    });
+
+    // 저장 취소 이벤트
+    socket.on('saveCanceled', ({ meetingId }) => {
+      io.to(meetingId).emit('saveCanceled', { 
+        message: '회의록 저장이 취소되었습니다.' 
+      });
     });
 
   });
