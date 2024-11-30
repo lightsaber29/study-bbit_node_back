@@ -64,6 +64,7 @@ export const initializeSocket = (io) => {
       if (meetingData) {
         meetingData.isRecording = false;
         console.log(meetingData.isRecording);
+        meetingData.transcripts = [];
         io.to(meetingId).emit('transcriptsReset');
         console.log('stopRecording');
       }
