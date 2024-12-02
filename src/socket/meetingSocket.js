@@ -294,5 +294,11 @@ export const initializeSocket = (io) => {
       });
     });
 
+    socket.on('timerEnd', ({ meetingId }) => {
+      // 모든 클라이언트에게 타이머 종료 이벤트 전파
+      console.log('타이머 종료');
+      io.to(meetingId).emit('timerEnd');
+    });
+
   });
 };
