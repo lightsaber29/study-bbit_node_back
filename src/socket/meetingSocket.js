@@ -1,6 +1,7 @@
 import { getImportantMeetingData, saveOriginalTranscript, saveMarkdownSummary, saveMeetingToDatabase } from '../utils/storageUtils.js';
 import dotenv from 'dotenv';
 dotenv.config();
+import {config} from "../config/env.js"
 
 import axios from 'axios';
 
@@ -194,8 +195,8 @@ export const initializeSocket = (io) => {
                 markdownResult.markdownPath
               );
 
-              //@@@ 알림 호출
-              await axios.post('https://studybbit.store:8080/api/noti/mm', {
+              //알림 호출
+              await axios.post(config.SPRING_BOOT_URL + '/api/noti/mm', {
                 roomId: meetingId,
                 fileUrl: markdownResult.markdownPath,
               });
