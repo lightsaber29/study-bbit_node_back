@@ -6,7 +6,8 @@ import {
     createRoom,
     findRoom,
     deleteRoom,
-    listParticipants
+    listParticipants,
+    kickParticipant
 } from '../controllers/livekitController.js';
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get('/api/express/find-room/:name', findRoom);
 router.delete('/api/express/delete-room/:name', deleteRoom);
 
 router.get('/api/express/list-participants/:roomName', listParticipants);
+router.post('/api/express/kick-participant', kickParticipant);
 
 export default router;

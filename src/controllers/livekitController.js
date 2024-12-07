@@ -181,3 +181,42 @@ export const listParticipants = async (req, res) => {
     res.status(500).json({ errorMessage: "방 접속자 데이터를 가져오는데 실패했습니다." });
   }
 };
+
+export const kickParticipant = async (req, res) => {
+  try {
+
+    let { roomName, userName } = req.body;
+
+    if (!roomName) {
+      return res.status(404).json({ errorMessage: "조회할 방 이름이 비었습니다." });
+    }
+
+    if (!userName) {
+      return res.status(404).json({ errorMessage: "쫒아낼 사용자 이름이 비었습니다." });
+    }
+
+    if (typeof roomName === 'number') {
+      roomName = roomName.toString();
+    }
+
+    const participants = await roomService.listParticipants(roomName);
+    if (!participants || participants.length === 0) {
+      return res.status(404).json({ errorMessage: `방 '${roomName}'에 참가자가 없습니다.` });
+    }
+
+    const participant = participants.find((p) => p.name === userName);
+    if (!participant) {
+      return res.status(404).json({ errorMessage: `사용자 '${userName}'를 찾을 수 없습니다.` });
+    }
+
+    const identity = participant.identity;
+    
+    // RoomServiceClient의 listRooms() 호출
+    await roomService.removeParticipant(roomName, identity);
+    
+    res.status(200).json({ message: `'${userName}'를(을) 쫒아냈습니다.` });
+  } catch (error) {
+    console.error("추방에 실패했습니다.", error);
+    res.status(500).json({ errorMessage: "추방에 실패했습니다." });
+  }
+};
