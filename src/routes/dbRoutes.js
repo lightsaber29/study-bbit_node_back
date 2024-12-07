@@ -13,4 +13,5 @@ router.get('/api/express/list-mm-summary', listMmSummary);
 router.get('/api/express/one-mm-summary/:mmSummaryId', oneMmSummary);
 router.delete('/api/express/delete-mm-summary/:mmSummaryId', deleteMmSummary);
 
+router.delete('/summary/:mmSummaryId', deleteMmSummary);
 export default router;

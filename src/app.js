@@ -51,8 +51,8 @@ export const createApp = () => {
 
   // Routes
   app.use('/', livekitRoutes);
-  app.use('/api/meetings', meetingRoutes);
-  app.use('/', dbRoutes);
+  app.use('/api/express/meetings', meetingRoutes);
+  app.use('/api/express', dbRoutes);
 
   // 요청 본문 데이터를 JSON으로 파싱
   app.use(bodyParser.json());
