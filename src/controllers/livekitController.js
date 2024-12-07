@@ -85,6 +85,31 @@ export const listRooms = async (req, res) => {
   }
 };
 
+export const findRoom = async (req, res) => {
+  try {
+    const { name } = req.params; // URL에서 방 이름 추출
+
+    if (!name) {
+      return res.status(400).json({ errorMessage: "조회할 방 이름이 비었습니다." });
+    }
+
+    // RoomServiceClient의 listRooms() 호출
+    const rooms = await roomService.listRooms();
+
+    // 특정 이름과 일치하는 방 찾기
+    const room = rooms.find((room) => room.name === name);
+
+    if (!room) {
+      return res.status(404).json({ errorMessage: "해당 이름의 방을 찾을 수 없습니다." });
+    }
+
+    res.status(200).json({ room });
+  } catch (error) {
+    console.error("방 데이터를 가져오는데 실패했습니다.", error);
+    res.status(500).json({ errorMessage: "방 데이터를 가져오는데 실패했습니다." });
+  }
+};
+
 export const createRoom = async (req, res) => {
   try {
 
@@ -154,5 +179,44 @@ export const listParticipants = async (req, res) => {
   } catch (error) {
     console.error("방 접속자 데이터를 가져오는데 실패했습니다.", error);
     res.status(500).json({ errorMessage: "방 접속자 데이터를 가져오는데 실패했습니다." });
+  }
+};
+
+export const kickParticipant = async (req, res) => {
+  try {
+
+    let { roomName, userName } = req.body;
+
+    if (!roomName) {
+      return res.status(404).json({ errorMessage: "조회할 방 이름이 비었습니다." });
+    }
+
+    if (!userName) {
+      return res.status(404).json({ errorMessage: "쫒아낼 사용자 이름이 비었습니다." });
+    }
+
+    if (typeof roomName === 'number') {
+      roomName = roomName.toString();
+    }
+
+    const participants = await roomService.listParticipants(roomName);
+    if (!participants || participants.length === 0) {
+      return res.status(404).json({ errorMessage: `방 '${roomName}'에 참가자가 없습니다.` });
+    }
+
+    const participant = participants.find((p) => p.name === userName);
+    if (!participant) {
+      return res.status(404).json({ errorMessage: `사용자 '${userName}'를 찾을 수 없습니다.` });
+    }
+
+    const identity = participant.identity;
+    
+    // RoomServiceClient의 listRooms() 호출
+    await roomService.removeParticipant(roomName, identity);
+    
+    res.status(200).json({ message: `'${userName}'를(을) 쫒아냈습니다.` });
+  } catch (error) {
+    console.error("추방에 실패했습니다.", error);
+    res.status(500).json({ errorMessage: "추방에 실패했습니다." });
   }
 };
