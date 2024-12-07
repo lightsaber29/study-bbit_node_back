@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
 import dotenv from 'dotenv';
+import puppeteer from 'puppeteer';
+import * as marked from 'marked';
 dotenv.config();
 
 // AWS S3 설정
@@ -131,7 +133,7 @@ const generateUniqueFileName = (meetingName, date) => {
 // 회의록 모드별 프롬프트 및 스키마 맵 정의
 const meetingModeConfig = new Map([
   ['basic', {
-    systemPrompt: '당신은 공부 회의록 요약 전문가입니다. 회의록에 음성 인식이 잘 안 되어 있는 부분을 감안하여 주세요. 공부 내용을 정리하는 의미의 회의록 요약이니, 공부에 도움되는 세부 내역들도 빠짐없이 정확히 회의록에 반영되어야 합니다. 그리고 회의록에 있는 내용과 참여 인원만을 바탕으로 요약해주세요. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.',
+    systemPrompt: '당신은 공부 회의록 요약 전문가입니다. 회의록에 음성 인식이 안 되어 있는 부분을 감안하여 주세요. 공부 내용을 정리하는 의미의 회의록 요약이니, 공부에 도움되는 세부 내역들도 빠짐없이 정확히 회의록에 반영되어야 합니다. 그리고 회의록에 있는 내용과 참여 인원만을 바탕으로 요약해주세요. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.',
     userPrompt: '아래의 회의록을 요약해주세요. response_format의 옵션에는 회의록 내용을 바탕으로 공부에 도움이 될 수 있는 사실적인 내용, 설명적인 내용을 넘버링을 이용해서 최대한 상세하게 넣어주고 각 항목들은 줄바꿈으로 구분해주세요. 중복되는 내용을 넣으면 안됩니다. 또한 당신이 생성한 모든 내용은 회의록에 기반하거나, 회의록 내용을 바탕으로 응용한 것이어야 하고, 회의록에 없는 내용과 없는 참여자를 생성해서는 안됩니다. 아래는 회의록 내용입니다. ',
     responseSchema: MeetingSummarySchema // 기존 스키마 사용
   }],
@@ -141,7 +143,7 @@ const meetingModeConfig = new Map([
     responseSchema: InterviewSummarySchema // 면접용 스키마 추가 예정
   }],
   ['discussion', {
-    systemPrompt: '당신은 토론 전문가입니다. 이용자의 토론 내용을 바탕으로 토론 실력 향상을 위한 토론 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 토론 내용을 바탕으로 토론 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 토론 내용에 전혀 없는 내용이 들어가면 안 됩니다. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.', // 토론 모드용 프롬프트 추가 예정
+    systemPrompt: '당신은 토론 전문가입니다. 이용자의 토론 내용을 바탕으로 토론 실력 향상을 위한 토론 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 토론 내용을 바탕으로 토론 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 토론 내용에 전혀 없는 내용이 들어가면 안 됩니다. 한국어로 작성해주세��. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.', // 토론 모드용 프롬프트 추가 예정
     userPrompt: '아래의 토론 내용을 바탕으로 토론 주제, 각각 발화자의 토론 내용을 정리, 토론 주제에 대한 찬성 및 반대 의견을 정리하고 각각의 의견에 대한 모범 답안 및 수정 사항 등을 생성해주세요. 참여자들의 아쉬운 점과, 개선 방향, 추가적으로 생각해볼만한 사안, 모범 답안 등을 통해 참여자의 토론 실력 향상에 도움이 되는 내용을 제시해주세요. 아래는 토론 내용입니다.',
     responseSchema: DiscussionSummarySchema // 토론용 스키마 추가 예정
   }]
@@ -312,7 +314,7 @@ ${topic.additionalPoints.map((point, index) => `${index + 1}. ${point}`).join("\
 </div>
 `).join("\n")}
 
-<h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">📝 종합 피드백</h2>
+<h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">💬 종합 피드백</h2>
 <div style="margin-left: 1rem; margin-top: 1rem;">
 ${meetingSummary.overallFeedback.map((feedback, index) => `${index + 1}. ${feedback}`).join("\n\n")}
 </div>`;
@@ -353,14 +355,103 @@ export const saveOriginalTranscript = async (meetingId, meetingName, transcripts
   }
 };
 
-// 마크다운 요약본 저장 함수
+// PDF 변환 함수 추가
+const convertToPDF = async (markdownContent) => {
+  try {
+    const html = marked.marked(markdownContent);
+    
+    const htmlTemplate = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            h1 { color: #2c3e50; margin-bottom: 1.5em; }
+            h2 { color: #34495e; margin-top: 1.5em; }
+            h3 { color: #455a64; }
+            pre {
+              background-color: #f5f5f5;
+              padding: 15px;
+              border-radius: 5px;
+              overflow-x: auto;
+            }
+            code { font-family: 'Courier New', monospace; }
+            blockquote {
+              border-left: 4px solid #ccc;
+              margin: 0;
+              padding-left: 15px;
+              color: #666;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 1em 0;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th { background-color: #f5f5f5; }
+            img { max-width: 100%; }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+      </html>
+    `;
+
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.setContent(htmlTemplate, {
+      waitUntil: 'networkidle0'
+    });
+
+    const pdf = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: `
+        <div style="font-size: 10px; text-align: center; width: 100%;">
+          <span class="pageNumber"></span> / <span class="totalPages"></span>
+        </div>
+      `
+    });
+
+    await browser.close();
+    return pdf;
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
+  }
+};
+
+// saveMarkdownSummary 함수 수정
 export const saveMarkdownSummary = async (meetingId, meetingName, markdownContent, currentDate) => {
-  console.log(markdownContent);
   const uniqueFileName = generateUniqueFileName(meetingName, currentDate);
   const formattedDate = currentDate.toISOString().split('T')[0];
   
+  // 마크다운 파일 저장
   const markdownKey = `meetings/${meetingId}/${formattedDate}/markdown/${uniqueFileName}.md`;
-  
   const markdownParams = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
     Key: markdownKey,
@@ -368,93 +459,36 @@ export const saveMarkdownSummary = async (meetingId, meetingName, markdownConten
     ContentType: 'text/markdown',
   };
 
+  // PDF 파일 저장
+  const pdfBuffer = await convertToPDF(markdownContent);
+  const pdfKey = `meetings/${meetingId}/${formattedDate}/pdf/${uniqueFileName}.pdf`;
+  const pdfParams = {
+    Bucket: process.env.AWS_S3_BUCKET_NAME,
+    Key: pdfKey,
+    Body: pdfBuffer,
+    ContentType: 'application/pdf',
+  };
+
   try {
-    await s3.putObject(markdownParams).promise();
+    // 마크다운과 PDF 모두 저장
+    await Promise.all([
+      s3.putObject(markdownParams).promise(),
+      s3.putObject(pdfParams).promise()
+    ]);
+
     const markdownUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${markdownKey}`;
+    const pdfUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${pdfKey}`;
     
     return {
       success: true,
-      markdownPath: markdownUrl
+      markdownPath: markdownUrl,
+      pdfPath: pdfUrl
     };
   } catch (error) {
-    console.error('Error saving markdown summary:', error);
+    console.error('Error saving markdown and PDF summary:', error);
     throw error;
   }
 };
-
-// // PostgreSQL에 회의록 정보 저장 함수
-// const saveMeetingToDatabase = async (meetingId, meetingName, date, transcriptPath, markdownPath) => {
-//   const query = `
-//     INSERT INTO meetings (meeting_id, meeting_name, date, transcript_path, markdown_path)
-//     VALUES ($1, $2, $3, $4, $5)
-//     RETURNING *;
-//   `;
-  
-//   try {
-//     const result = await pool.query(query, [
-//       meetingId,
-//       meetingName,
-//       date,
-//       transcriptPath,
-//       markdownPath
-//     ]);
-//     return result.rows[0];
-//   } catch (error) {
-//     console.error('Error saving to database:', error);
-//     throw error;
-//   }
-// };
-
-// 소켓 이벤트 핸들러 수정
-// export const handleSaveMeeting = async (socket, meetingRooms, io) => {
-//   socket.on('saveMeeting', async ({ meetingId, meetingName }) => {
-//     const meetingData = meetingRooms.get(meetingId);
-//     const date = new Date();
-
-//     try {
-//       // 원본 저장 (비동기)
-//       const transcriptPromise = saveOriginalTranscript(
-//         meetingId, 
-//         meetingName, 
-//         meetingData.transcripts, 
-//         date
-//       );
-
-//       // GPT 요약 및 마크다운 저장 (비동기)
-//       const markdownPromise = getImportantMeetingData(meetingData.transcripts, date)
-//         .then(markdownContent => 
-//           saveMarkdownSummary(meetingId, meetingName, markdownContent, date)
-//         );
-
-//       // 모든 저장 작업이 완료될 때까지 대기
-//       const [transcriptResult, markdownResult] = await Promise.all([
-//         transcriptPromise,
-//         markdownPromise
-//       ]);
-
-//       // PostgreSQL에 저장
-//       await saveMeetingToDatabase(
-//         meetingId,
-//         meetingName,
-//         date,
-//         transcriptResult.transcriptPath,
-//         markdownResult.markdownPath
-//       );
-
-//       // 회의록 초기화 및 클라이언트 통보
-//       meetingData.transcripts = [];
-//       io.to(meetingId).emit('transcriptsReset');
-//       socket.emit('meetingSaved', { success: true });
-      
-//     } catch (error) {
-//       console.error('Error in handleSaveMeeting:', error);
-//       socket.emit('meetingSaved', { 
-//         success: false, 
-//         error: 'Failed to save meeting data' 
-//       });
-//     }
-//   });
-// };
 
 // 회의록 조회 함수
 export const getMeetingTranscripts = async (meetingId) => {
