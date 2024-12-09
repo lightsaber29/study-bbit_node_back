@@ -132,17 +132,17 @@ const generateUniqueFileName = (meetingName, date) => {
 const meetingModeConfig = new Map([
   ['basic', {
     systemPrompt: '당신은 공부 회의록 요약 전문가입니다. 회의록에 음성 인식이 잘 안 되어 있는 부분을 감안하여 주세요. 공부 내용을 정리하는 의미의 회의록 요약이니, 공부에 도움되는 세부 내역들도 빠짐없이 정확히 회의록에 반영되어야 합니다. 그리고 회의록에 있는 내용과 참여 인원만을 바탕으로 요약해주세요. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.',
-    userPrompt: '아래의 회의록을 요약해주세요. response_format의 옵션에는 회의록 내용을 바탕으로 공부에 도움이 될 수 있는 사실적인 내용, 설명적인 내용을 넘버링을 이용해서 최대한 상세하게 넣어주고 각 항목들은 줄바꿈으로 구분해주세요. 중복되는 내용을 넣으면 안됩니다. 또한 당신이 생성한 모든 내용은 회의록에 기반하거나, 회의록 내용을 바탕으로 응용한 것이어야 하고, 회의록에 없는 내용과 없는 참여자를 생성해서는 안됩니다. 아래는 회의록 내용입니다. ',
+    userPrompt: '아래의 회의록을 요약해주세요. response_format의 옵션에는 회의록 내용을 바탕으로 공부에 도움이 될 수 있는 사실적인 내용, 설명적인 내용을 최대한 상세하게 넣어주세요. 중복되는 내용을 넣으면 안됩니다. 또한 당신이 생성한 모든 내용은 반드시 회의록에 기반한 내용이어야 합니다. 회의록에 없는 내용과 없는 참여자를 절대로 생성해서는 안됩니다. 아래는 회의록 내용입니다. ',
     responseSchema: MeetingSummarySchema // 기존 스키마 사용
   }],
   ['interview', {
-    systemPrompt: '당신은 면접 전문가입니다. 이용자의 면접 내용을 바탕으로 면접 실력 향상을 위한 면접 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 면접 내용을 바탕으로 면접 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 면접 내용에 전혀 없는 내용이 들어가면 안 됩니다.한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.', // 면접 모드용 프롬프트 추가 예정
-    userPrompt: '아래의 면접 내용을 바탕으로 면접 질문과 모범 답안, 수정 사항 등을 생성해주세요. 면접 내용을 빠짐없이 꼼꼼히 검토해보고 면접 질문과 면접자의 답변, 면접자 답변의 아쉬운 점과 개선 방안 및 모범 답안, 추가적으로 나올 수 있는 꼬리 질문들과 모범 답안 등을 정확히 적어주세요. 아래는 면접 내용입니다. ',
+    systemPrompt: '당신은 면접 전문가입니다. 이용자의 면접 내용을 바탕으로 면접 실력 향상을 위한 면접 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 면접 내용을 바탕으로 면접 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 면접 내용에 전혀 없는 내용이 들어가면 안 됩니다.한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요. 가장 중요한 부분 중에 하나는 음성인식이 잘 안 되어 있는 부분이 있어 오타가 많을 수 있습니다. 해당 경우에는 원래 어떤 말일지 전체 내용을 바탕으로 객관적으로 판단하여 반드시 보정해주셔야 합니다.', // 면접 모드용 프롬프트 추가 예정
+    userPrompt: '아래의 면접 내용을 바탕으로 면접 질문과 모범 답안, 수정 사항 등을 생성해주세요. 면접 내용을 빠짐없이 꼼꼼히 검토해보고 우선 면접 질문과 면접자의 답변을 추출하고, 각 면접자 답변의 아쉬운 점과 개선 방안 및 모범 답안, 추가적으로 나올 수 있는 꼬리 질문들과 모범 답안 등을 정확히 적어주세요. 가장 중요한 부분은 면접 질문, 면접자 답변에 해당하는 부분은 반드시 면접한 내용을 그대로 담아야되고 아래 제시되는 면접 내용에 없는 부분은 절대로 담아서는 안됩니다. 이상하면 이상한대로 면접한 내용이 그대로 담겨야 복기를 할 수 있기 때문입니다. 아래는 면접 내용입니다. ',
     responseSchema: InterviewSummarySchema // 면접용 스키마 추가 예정
   }],
   ['discussion', {
-    systemPrompt: '당신은 토론 전문가입니다. 이용자의 토론 내용을 바탕으로 토론 실력 향상을 위한 토론 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 토론 내용을 바탕으로 토론 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 토론 내용에 전혀 없는 내용이 들어가면 안 됩니다. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.', // 토론 모드용 프롬프트 추가 예정
-    userPrompt: '아래의 토론 내용을 바탕으로 토론 주제, 각각 발화자의 토론 내용을 정리, 토론 주제에 대한 찬성 및 반대 의견을 정리하고 각각의 의견에 대한 모범 답안 및 수정 사항 등을 생성해주세요. 참여자들의 아쉬운 점과, 개선 방향, 추가적으로 생각해볼만한 사안, 모범 답안 등을 통해 참여자의 토론 실력 향상에 도움이 되는 내용을 제시해주세요. 아래는 토론 내용입니다.',
+    systemPrompt: '당신은 토론 전문가입니다. 이용자의 토론 내용을 바탕으로 토론 실력 향상을 위한 토론 질문 생성, 모범 답안 제시 등의 역할을 수행할 것입니다. 토론 내용을 바탕으로 토론 질문과 모범 답안, 수정 사항 등을 생성해주세요. 결과물에 토론 내용에 전혀 없는 내용이 들어가면 안 됩니다. 한국어로 작성해주세요. 또한 오류가 날 수 있으니 해당하는 내용이 없다면 없다는 내용을 추가해주셔서 포맷을 반드시 맞춰주세요.가장 중요한 부분 중에 하나는 음성인식이 잘 안 되어 있는 부분이 있어 오타가 많을 수 있습니다. 해당 경우에는 원래 어떤 말일지 전체 내용을 바탕으로 객관적으로 판단하여 반드시 보정해주셔야 합니다.', // 토론 모드용 프롬프트 추가 예정
+    userPrompt: '아래의 토론 내용을 바탕으로 토론 주제, 각각 발화자의 토론 내용을 정리, 토론 주제에 대한 찬성 및 반대 의견을 정리하고 각각의 의견에 대한 모범 답안 및 수정 사항 등을 생성해주세요. 참여자들의 아쉬운 점과, 개선 방향, 추가적으로 생각해볼만한 사안, 모범 답안 등을 통해 참여자의 토론 실력 향상에 도움이 되는 내용을 제시해주세요. 가장 중요한 부분은 토론 질문(주제), 토론자 답변에 해당하는 부분은 반드시 토론한 내용을 그대로 담아야되고 아래 제시되는 토론 내용에 없는 부분은 절대로 담아서는 안됩니다. 이상하면 이상한대로 토론한 내용이 그대로 담겨야 복기를 할 수 있기 때문입니다. 아래는 토론 내용입니다.',
     responseSchema: DiscussionSummarySchema // 토론용 스키마 추가 예정
   }]
 ]);
@@ -213,21 +213,26 @@ ${meetingSummary.mainTopic}
 
 <h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">📝 주요 토픽</h2>
 <div style="margin-left: 1rem; margin-top: 1rem;">
-${meetingSummary.topics.map((topic, index) => `${index + 1}. ${topic}`).join("\n\n")}
+<ol style="list-style-type: decimal; margin-left: 1rem;">
+${meetingSummary.topics.map(topic => `<li style="margin-bottom: 1rem;">${topic}</li>`).join('\n')}
+</ol>
 </div>
 
 <h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">💬 참여자 발언 요약</h2>
 ${meetingSummary.participantSummaries
   .map(({ name, summaries }) => `
-<h3 style="font-size: 1.5rem; font-weight: 500; margin-top: 1.5rem;">${name}</h3>
-<div style="margin-left: 1rem; margin-top: 1rem;">
-${summaries.map(summary => `• ${summary}`).join("\n\n")}
-</div>
-  `).join("\n")}
+<section style="margin: 1rem 0">
+  <h3 style="font-size: 1.5rem; font-weight: 500;">${name}</h3>
+  <ul style="list-style-type: disc; margin: -1rem 0 0 2rem;">
+    ${summaries.map(summary => `<li style="margin: 0.3rem 0">${summary}</li>`).join('\n')}
+  </ul>
+</section>`).join('\n')}
 
 <h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">📌 참고 사항</h2>
 <div style="margin-left: 1rem; margin-top: 1rem;">
-${meetingSummary.options.map((option, index) => `${index + 1}. ${option}`).join("\n\n")}
+<ol style="list-style-type: decimal; margin-left: 1rem;">
+${meetingSummary.options.map(option => `<li style="margin-bottom: 1rem;">${option}</li>`).join('\n')}
+</ol>
 </div>`;
 };
 
@@ -294,27 +299,34 @@ ${meetingSummary.discussionTopics.map((topic, topicIndex) => `
 
 <h3 style="font-size: 1.5rem; font-weight: 500; margin-top: 1.5rem;">주요 의견</h3>
 ${topic.arguments.map((arg, argIndex) => `
-<div style="margin-left: 1rem; margin-top: 1rem;">
-<h4 style="font-size: 1.2rem; font-weight: 500; margin-top: 1rem;">${arg.speaker}의 의견</h4>
-${topic.type === 'debate' ? `• 입장: ${arg.position}\n` : ''}
-• 주장: ${arg.opinion}
-</div>
-`).join("\n\n")}
+<section style="margin: 1rem 0">
+  <h4 style="font-size: 1.2rem; font-weight: 500;">${arg.speaker}의 의견</h4>
+  <ul style="list-style-type: disc; margin: 0.5rem 0 0 2rem;">
+    ${topic.type === 'debate' ? `<li style="margin: 0.3rem 0">입장: ${arg.position}</li>` : ''}
+    <li style="margin: 0.3rem 0">주장: ${arg.opinion}</li>
+  </ul>
+</section>`).join('\n')}
 
 <h3 style="font-size: 1.5rem; font-weight: 500; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">📊 피드백</h3>
 <div style="margin-left: 1rem; margin-top: 1rem;">
-${topic.feedback.map((fb, index) => `${index + 1}. ${fb}`).join("\n\n")}
+<ol style="list-style-type: decimal; margin-left: 1rem;">
+${topic.feedback.map(fb => `<li style="margin-bottom: 1rem;">${fb}</li>`).join('\n')}
+</ol>
 </div>
 
 <h3 style="font-size: 1.5rem; font-weight: 500; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">🔍 추가 고려사항</h3>
 <div style="margin-left: 1rem; margin-top: 1rem;">
-${topic.additionalPoints.map((point, index) => `${index + 1}. ${point}`).join("\n\n")}
+<ol style="list-style-type: decimal; margin-left: 1rem;">
+${topic.additionalPoints.map(point => `<li style="margin-bottom: 1rem;">${point}</li>`).join('\n')}
+</ol>
 </div>
 `).join("\n")}
 
 <h2 style="font-size: 1.8rem; font-weight: 500; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">📝 종합 피드백</h2>
 <div style="margin-left: 1rem; margin-top: 1rem;">
-${meetingSummary.overallFeedback.map((feedback, index) => `${index + 1}. ${feedback}`).join("\n\n")}
+<ol style="list-style-type: decimal; margin-left: 1rem;">
+${meetingSummary.overallFeedback.map(feedback => `<li style="margin-bottom: 1rem;">${feedback}</li>`).join('\n')}
+</ol>
 </div>`;
 };
 
