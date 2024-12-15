@@ -1,1 +1,1 @@
-# study-bbit_node_back
+스터디빗 AI 기능 및 오픈비두 API 용 서버 리포지토리입니다.
